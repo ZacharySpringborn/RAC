@@ -157,6 +157,10 @@
   .submit-btn { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #fff; background: var(--orange); border: none; padding: 16px; border-radius: 2px; cursor: pointer; transition: background 0.2s ease; margin-top: 8px; }
   .submit-btn:hover { background: var(--orange2); }
   .form-note { font-size: 11px; color: var(--muted); margin-top: 14px; text-align: center; line-height: 1.5; }
+  .form-debug { margin-top: 14px; padding: 14px 16px; border-radius: 2px; border: 1px solid var(--border); background: #0c0c0c; color: #C9C4BC; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .form-debug a { color: var(--orange); }
+  .form-debug.ok { border-color: #3BB46A; color: #CFEBD8; }
+  .form-debug.err { border-color: var(--orange); }
   .form-success { background: rgba(60,180,100,0.12); border: 1px solid #3BB46A; border-radius: 2px; padding: 24px 24px; font-size: 14px; color: #CFEBD8; line-height: 1.7; }
   .form-success strong { display: block; color: #7FD99F; font-weight: 600; font-size: 15px; margin-bottom: 6px; font-family: 'DM Sans', sans-serif; }
   .submit-btn:disabled { opacity: 0.6; cursor: default; }
@@ -430,11 +434,24 @@
       if (ok)   ok.hidden = false;
     }
 
+    var dbg = document.getElementById('f-debug');
+    function showDebug(msg, cls){
+      if (!dbg) return;
+      dbg.hidden = false;
+      dbg.className = 'form-debug' + (cls ? ' ' + cls : '');
+      dbg.innerHTML = msg;
+    }
+    function smsLink(msg){
+      return '<a href="sms:' + SMS_NUMBER + '?body=' + encodeURIComponent(msg) + '">Tap here to text it to Zachary instead.</a>';
+    }
+
+    // DIAGNOSTIC BUILD: surfaces the exact outcome on the page instead of a silent redirect.
     window.sendRaintreeForm = function(){
       var msg = (ta.value || '').trim();
-      if (!msg) { ta.focus(); return; }
+      if (!msg) { showDebug('Type a message or tap a button first.', 'err'); ta.focus(); return; }
       var btn = document.getElementById('f-send');
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+      showDebug('Sending to Formspree…');
 
       fetch(FORMSPREE, {
         method: 'POST',
@@ -446,13 +463,18 @@
           _subject: 'Raintree Proposal — Member Appreciation Happy Hour'
         })
       }).then(function(r){
-        if (!r.ok) throw new Error('Formspree returned ' + r.status);
-        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-        showSuccess();
-      }).catch(function(){
-        // Fallback: open a pre-filled SMS to Zachary with the comment in the body
+        return r.text().then(function(t){ return { ok: r.ok, status: r.status, body: t }; });
+      }).then(function(res){
+        if (res.ok) {
+          try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+          showSuccess();
+        } else {
+          if (btn) { btn.disabled = false; btn.textContent = 'Send to Zachary'; }
+          showDebug('Formspree rejected it (HTTP ' + res.status + '):\n' + res.body + '\n\n' + smsLink(msg), 'err');
+        }
+      }).catch(function(err){
         if (btn) { btn.disabled = false; btn.textContent = 'Send to Zachary'; }
-        window.location.href = 'sms:' + SMS_NUMBER + '?body=' + encodeURIComponent(msg);
+        showDebug('The request never reached Formspree:\n' + ((err && err.message) ? err.message : err) + '\n\n' + smsLink(msg), 'err');
       });
     };
   })();
