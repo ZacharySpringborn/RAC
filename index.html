@@ -157,6 +157,9 @@
   .submit-btn { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #fff; background: var(--orange); border: none; padding: 16px; border-radius: 2px; cursor: pointer; transition: background 0.2s ease; margin-top: 8px; }
   .submit-btn:hover { background: var(--orange2); }
   .form-note { font-size: 11px; color: var(--muted); margin-top: 14px; text-align: center; line-height: 1.5; }
+  .form-success { background: rgba(60,180,100,0.12); border: 1px solid #3BB46A; border-radius: 2px; padding: 24px 24px; font-size: 14px; color: #CFEBD8; line-height: 1.7; }
+  .form-success strong { display: block; color: #7FD99F; font-weight: 600; font-size: 15px; margin-bottom: 6px; font-family: 'DM Sans', sans-serif; }
+  .submit-btn:disabled { opacity: 0.6; cursor: default; }
 
   footer { padding: 32px 64px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
   .footer-left { font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--orange); }
@@ -360,17 +363,23 @@
   </div>
   <div>
     <div class="form-card">
-      <div class="f-head">Say yes — or ask us anything.</div>
-      <div class="f-sub">Tap one to get started, add a note if you like, and hit send. It comes straight to Zachary.</div>
-      <div class="chip-row">
-        <button class="chip" type="button" data-intent="yes">We're interested</button>
-        <button class="chip" type="button" data-intent="questions">We have questions</button>
-        <button class="chip" type="button" data-intent="nobrainer">This is a no-brainer</button>
-        <button class="chip" type="button" data-intent="drinks">You had us at "free drinks"</button>
+      <div id="form-body">
+        <div class="f-head">Say yes — or ask us anything.</div>
+        <div class="f-sub">Tap one to get started, add a note if you like, and hit send. It comes straight to Zachary.</div>
+        <div class="chip-row">
+          <button class="chip" type="button" data-intent="yes">We're interested</button>
+          <button class="chip" type="button" data-intent="questions">We have questions</button>
+          <button class="chip" type="button" data-intent="nobrainer">This is a no-brainer</button>
+          <button class="chip" type="button" data-intent="drinks">You had us at "free drinks"</button>
+        </div>
+        <div class="field"><label>Message</label><textarea id="f-msg" placeholder="Tap an option above, or write your own note…"></textarea></div>
+        <button id="f-send" class="submit-btn" type="button" onclick="sendRaintreeForm()">Send to Zachary</button>
+        <div class="form-note">Your message comes straight to Zachary — no sign-in, no fuss.</div>
       </div>
-      <div class="field"><label>Message</label><textarea id="f-msg" placeholder="Tap an option above, or write your own note…"></textarea></div>
-      <button class="submit-btn" type="button" onclick="sendRaintreeForm()">Send to Zachary</button>
-      <div class="form-note">Your message comes straight to Zachary — no sign-in, no fuss.</div>
+      <div id="f-success" class="form-success" hidden>
+        <strong>Thanks — that's on its way to Zachary.</strong>
+        He'll follow up with you personally. Consider Raintree appreciated.
+      </div>
     </div>
   </div>
 </section>
@@ -382,31 +391,71 @@
 
 <script>
   (function(){
+    var FORMSPREE   = "https://formspree.io/f/xyegpeva";
+    var SMS_NUMBER  = "+19708894925";
+    var STORAGE_KEY = "rac_feedback_draft";
+    var ta    = document.getElementById('f-msg');
+    var chips = document.querySelectorAll('.chip');
     var messages = {
       yes:       "Yes — Raintree is interested in hosting the Member Appreciation Happy Hour. Let's find a date that works.",
       questions: "We have a few questions about the Member Appreciation Happy Hour: ",
       nobrainer: "This looks like a no-brainer — let's talk about making it happen at Raintree.",
       drinks:    "You had us at \"free drinks.\" Raintree's in — let's pick a date."
     };
-    var chips = document.querySelectorAll('.chip');
+
+    // Restore any saved draft (survives tab close)
+    try { var saved = localStorage.getItem(STORAGE_KEY); if (saved && ta) ta.value = saved; } catch (e) {}
+
+    // Autosave 1.5s after typing stops
+    var timer;
+    if (ta) ta.addEventListener('input', function(){
+      clearTimeout(timer);
+      timer = setTimeout(function(){ try { localStorage.setItem(STORAGE_KEY, ta.value); } catch (e) {} }, 1500);
+    });
+
     chips.forEach(function(c){
       c.addEventListener('click', function(){
         chips.forEach(function(x){ x.classList.remove('active'); });
         c.classList.add('active');
-        var ta = document.getElementById('f-msg');
         ta.value = messages[c.getAttribute('data-intent')] || '';
+        try { localStorage.setItem(STORAGE_KEY, ta.value); } catch (e) {}
         ta.focus();
       });
     });
+
+    function showSuccess(){
+      var body = document.getElementById('form-body');
+      var ok   = document.getElementById('f-success');
+      if (body) body.style.display = 'none';
+      if (ok)   ok.hidden = false;
+    }
+
+    window.sendRaintreeForm = function(){
+      var msg = (ta.value || '').trim();
+      if (!msg) { ta.focus(); return; }
+      var btn = document.getElementById('f-send');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+      fetch(FORMSPREE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          source:  'Raintree Athletic Club — Happy Hour Proposal',
+          page:    window.location.href,
+          _subject: 'Raintree Proposal — Member Appreciation Happy Hour'
+        })
+      }).then(function(r){
+        if (!r.ok) throw new Error('Formspree returned ' + r.status);
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        showSuccess();
+      }).catch(function(){
+        // Fallback: open a pre-filled SMS to Zachary with the comment in the body
+        if (btn) { btn.disabled = false; btn.textContent = 'Send to Zachary'; }
+        window.location.href = 'sms:' + SMS_NUMBER + '?body=' + encodeURIComponent(msg);
+      });
+    };
   })();
-  /* INTERIM: emails Zachary directly. Swap this for the forms-manager endpoint
-     used in the property-report / client-search templates once provided. */
-  function sendRaintreeForm(){
-    var msg = (document.getElementById('f-msg').value || '').trim();
-    var subject = encodeURIComponent('Raintree Member Appreciation Happy Hour');
-    var body = encodeURIComponent((msg || '(no message)') + '\n\n— Sent from the Raintree Happy Hour proposal.');
-    window.location.href = 'mailto:zacharyspringborn@jpar.net?subject=' + subject + '&body=' + body;
-  }
 </script>
 
 </body>
