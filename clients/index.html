@@ -57,7 +57,7 @@ button.go:hover{filter:brightness(.85)}button.go:disabled{opacity:.6;cursor:wait
 .ticket{display:grid;grid-template-columns:1fr 104px;background:var(--card);border:2px solid var(--accent);border-radius:20px;margin:18px 0 20px;position:relative;overflow:hidden}
 .ticket .main{padding:22px 22px 20px}
 .ticket .stub{background:var(--accent);color:#fff;border-left:2px dashed rgba(255,255,255,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px;gap:4px}
-.ticket .stub b{font-family:'Unbounded';font-weight:900;font-size:22px;line-height:1.05;text-transform:uppercase}
+.ticket .stub b{font-family:'Unbounded';font-weight:900;font-size:16px;line-height:1.05;text-transform:uppercase}
 .ticket .stub span{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 .ticket h2{font-family:'Unbounded';font-weight:800;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
 .ticket .nm{font-family:'Unbounded';font-weight:800;font-size:clamp(20px,5.4vw,26px);margin:8px 0 2px;word-break:break-word}
@@ -103,11 +103,11 @@ button.go:hover{filter:brightness(.85)}button.go:disabled{opacity:.6;cursor:wait
   <div class="kicker" style="margin-top:28px">You’re invited · Clients &amp; friends</div>
   <h1 style="margin-top:12px">Client Appreciation <em>Happy Hour</em></h1>
   <span class="when" id="whenLine"></span>
-  <p class="intro">A thank-you to the clients and friends of <b>Zachary Springborn, JPAR Modern Real Estate</b>, <b>Vinny Garmon, Goosehead Insurance</b> and <b>Springborn Botanical</b>. Stop by after work, have a drink on us, and catch up.</p>
+  <p class="intro">A thank-you to the clients and friends of <b>Zachary Springborn, JPAR Modern Real Estate</b>, <b>Vinny Garmon, Goosehead Insurance</b> and <b>Springborn Botanical</b>. Stop by after work, drinks are on me, and let’s catch up.</p>
   <div class="loc"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.6"/></svg>
     <div><div class="big">Shields &amp; Drake</div><div class="addr">RAC Cafe at Raintree Athletic Club<br>2555 S Shields St, Fort Collins</div><div class="note">An easy stop on your way home. No membership needed.</div>
     <a href="https://www.google.com/maps/search/?api=1&amp;query=Raintree+Athletic+Club+2555+S+Shields+St+Fort+Collins+CO" target="_blank" rel="noopener">Get directions →</a></div></div>
-  <ul class="perks"><li>Your first drink’s on us: wine, beer, or a plant-based protein shake from Springborn Botanical.</li><li>Snacks, good company, come and go any time from 3 to 6.</li><li>Bring someone along. Each RSVP’d guest gets a free drink.</li></ul>
+  <ul class="perks"><li><b>Drinks on me:</b> wine, beer, or a plant-based protein shake from Springborn Botanical.</li><li>Snacks, good company, come and go any time from 3 to 6.</li><li>Bring someone along. Just include them in your party count.</li></ul>
   <div class="confirm">Confirm your spot</div>
   <div id="banner"></div>
   <form id="rsvp" novalidate autocomplete="on">
@@ -129,13 +129,13 @@ button.go:hover{filter:brightness(.85)}button.go:disabled{opacity:.6;cursor:wait
 
 <section id="ticketview" hidden>
   <div class="ok">You're on the list. See you there!</div>
-  <h1 style="margin-top:6px;font-size:clamp(24px,6.6vw,34px)">Here's your <em>free drink ticket</em></h1>
+  <h1 style="margin-top:6px;font-size:clamp(24px,6.6vw,34px)">Here's your <em>drinks ticket</em></h1>
   <div class="ticket" id="ticket">
     <div class="main"><h2>Client Appreciation Happy Hour</h2>
       <div class="nm" id="t-name"></div><div class="pt" id="t-party"></div>
       <div class="code" id="t-code"></div>
       <div class="ev"><b id="t-when"></b><span id="t-where"></span></div></div>
-    <div class="stub"><b>Free<br>drink</b><span>Show at<br>the bar</span></div>
+    <div class="stub"><b>Drinks<br>on me</b><span>Show at<br>the bar</span></div>
   </div>
   <p class="how"><b>Show this ticket at the RAC Cafe bar.</b> Take a screenshot so you have it handy. Your name is on the list, so we can find you even without it. The RAC Cafe is just inside Raintree Athletic Club at Shields &amp; Drake.</p>
   <div class="actions"><button class="btn" id="calBtn" type="button">Add to calendar</button><button class="btn ghost" id="printBtn" type="button">Print or save as PDF</button><button class="btn ghost" id="againBtn" type="button">RSVP someone else</button></div>
@@ -168,7 +168,7 @@ function makeCode(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";const r=
 function store(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
 function load(){try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){return null}}
 function showTicket(t){
-  $("#t-name").textContent=t.name; $("#t-party").textContent=(t.party>1?"Party of "+t.party+" · one free drink each":"One free drink");
+  $("#t-name").textContent=t.name; $("#t-party").textContent=(t.party>1?"Party of "+t.party+" · drinks on Zachary":"Drinks on Zachary");
   $("#t-code").textContent=t.code; $("#t-when").textContent=EVENT.dateText+" · "+EVENT.timeText; $("#t-where").textContent=EVENT.place;
   $("#formview").hidden=true; $("#ticketview").hidden=false; window.scrollTo(0,0);
 }
@@ -201,7 +201,7 @@ $("#againBtn").addEventListener("click",()=>{try{localStorage.removeItem(KEY)}ca
 $("#calBtn").addEventListener("click",()=>{
   const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//RAC Happy Hour//EN","BEGIN:VEVENT","UID:"+EVENT.id+"@zacharyspringborn.github.io",
     "DTSTAMP:"+new Date().toISOString().replace(/[-:]|\.\d{3}/g,""),"DTSTART;TZID=America/Denver:"+EVENT.ymd+"T"+EVENT.startHM+"00","DTEND;TZID=America/Denver:"+EVENT.ymd+"T"+EVENT.endHM+"00",
-    "SUMMARY:"+EVENT.title+" (Shields & Drake)","LOCATION:"+EVENT.place.replace(/,/g,"\\,"),"DESCRIPTION:Show your free drink ticket at the RAC Cafe bar.","END:VEVENT","END:VCALENDAR"].join("\r\n");
+    "SUMMARY:"+EVENT.title+" (Shields & Drake)","LOCATION:"+EVENT.place.replace(/,/g,"\\,"),"DESCRIPTION:Show your ticket at the RAC Cafe bar. Drinks on Zachary.","END:VEVENT","END:VCALENDAR"].join("\r\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"})); a.download="client-appreciation-happy-hour.ics"; document.body.appendChild(a); a.click(); a.remove();
 });
 const saved=load(); if(saved&&saved.code) showTicket(saved);
